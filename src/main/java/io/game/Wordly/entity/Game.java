@@ -1,56 +1,33 @@
 package io.game.Wordly.entity;
 
 import io.game.Wordly.utils.Generator;
+import io.game.Wordly.utils.PyGrid;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Game {
 
-    private int gameId;
+    private final int gameId;
 
-    private Player firstPlayer;
+    private final Player firstPlayer;
 
-    private Player secondPlayer;
+    private final Player secondPlayer;
 
-    private WordGrid grid;
+    private final Map<Player, Integer> playerScores;
 
-    private int firstPlayerScore;
+    private final Cell[][] grid;
 
-    private int secondPlayerScore;
+    private final String theme;
 
-    public Game(Player firstPlayer, Player secondPlayer) {
-        this.firstPlayer = firstPlayer;
-        this.secondPlayer = secondPlayer;
-        this.grid = new WordGrid();
-        this.firstPlayerScore = 0;
-        this.secondPlayerScore = 0;
-        this.gameId = Generator.gameId();
+    private final String[] hiddenWords;
+
+    public String[] getHiddenWords() {
+        return hiddenWords;
     }
 
-    public int getGameId() {
-        return gameId;
-    }
-
-    public void setGameId(int gameId) {
-        this.gameId = gameId;
-    }
-
-    public void setFirstPlayer(Player firstPlayer) {
-        this.firstPlayer = firstPlayer;
-    }
-
-    public void setSecondPlayer(Player secondPlayer) {
-        this.secondPlayer = secondPlayer;
-    }
-
-    public void setGrid(WordGrid grid) {
-        this.grid = grid;
-    }
-
-    public void setFirstPlayerScore(int firstPlayerScore) {
-        this.firstPlayerScore = firstPlayerScore;
-    }
-
-    public void setSecondPlayerScore(int secondPlayerScore) {
-        this.secondPlayerScore = secondPlayerScore;
+    public Map<Player, Integer> getPlayerScores() {
+        return playerScores;
     }
 
     public Player getFirstPlayer() {
@@ -61,16 +38,61 @@ public class Game {
         return secondPlayer;
     }
 
-    public WordGrid getGrid() {
-        return grid;
+    public String getTheme() {
+        return theme;
     }
 
-    public int getFirstPlayerScore() {
-        return firstPlayerScore;
+    public Game(Player firstPlayer, Player secondPlayer) {
+        this.firstPlayer = firstPlayer;
+        this.secondPlayer = secondPlayer;
+        this.playerScores = new HashMap<>();
+        this.playerScores.put(firstPlayer, 0);
+        this.playerScores.put(secondPlayer, 0);
+        this.theme = PyGrid.randomTheme();
+        this.hiddenWords = PyGrid.getWords(theme);
+        this.grid = PyGrid.getGrid(hiddenWords);
+        this.gameId = Generator.gameId();
     }
 
-    public int getSecondPlayerScore() {
-        return secondPlayerScore;
+    public Player getPlayer(String playerId) {
+        if (this.firstPlayer.getPlayerId().equals(playerId))
+            return this.firstPlayer;
+
+        else if (this.secondPlayer.getPlayerId().equals(playerId))
+            return this.secondPlayer;
+
+        return null;
     }
 
+    public int getScore(Player player) {
+        return this.playerScores.get(player);
+    }
+
+    public boolean contains(Player player) {
+        return this.firstPlayer.equals(player) || this.secondPlayer.equals(player);
+    }
+
+    public int getGameId() {
+        return gameId;
+    }
+
+    public void setScore(Player player, int score) {
+        this.playerScores.put(player, score);
+    }
+
+    public Cell[][] getGrid() {
+        return this.grid;
+    }
+
+    public Player getOtherPlayer(Player player) {
+        if (this.contains(player))
+            return player.equals(this.firstPlayer)
+                    ? this.secondPlayer : this.firstPlayer;
+
+        return null;
+    }
+
+    public Player[] getPlayers() {
+        return new Player[]{this.firstPlayer, this.secondPlayer};
+    }
 }

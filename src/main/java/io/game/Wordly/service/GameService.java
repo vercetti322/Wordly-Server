@@ -3,6 +3,8 @@ package io.game.Wordly.service;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import io.game.Wordly.dto.GameDto;
 import io.game.Wordly.entity.Game;
 import io.game.Wordly.entity.Player;
 import org.springframework.stereotype.Service;
@@ -31,43 +33,41 @@ public class GameService {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                messagingTemplate.convertAndSend("/player/gameObject/" +
-                        game.getFirstPlayer().getPlayerId(), game);
-
-                messagingTemplate.convertAndSend("/player/gameObject/" +
-                        game.getSecondPlayer().getPlayerId(), game);
-
-                System.out.println("Game broadcast to players: " + game.getFirstPlayer()
-                        .getPlayerId() + ", " + game.getSecondPlayer().getPlayerId());
+                for (Player player : game.getPlayers()) {
+                    messagingTemplate.convertAndSend("/player/gameObject/" +
+                            player.getPlayerId(), getGameDto(game, player));
+                }
             }
-        }, 150);
+        }, 175);
     }
 
 
     public Player getOtherPlayer(Player player) {
         // Find the game the player is part of
-        Game gameToRemove = null;
+        Game currGame = null;
         for (Game game : this.games) {
-            if (game.getFirstPlayer().equals(player) || game.getSecondPlayer().equals(player)) {
-                gameToRemove = game;
+            if (game.contains(player)) {
+                currGame = game;
                 break;
             }
         }
 
-        if (gameToRemove != null) {
-            return gameToRemove.getFirstPlayer().equals(player)
-                    ? gameToRemove.getSecondPlayer()
-                    : gameToRemove.getFirstPlayer();
-        }
+        if (currGame != null)
+            return currGame.getOtherPlayer(player);
 
         return null;
+    }
+
+    public GameDto getGameDto(Game game, Player player) {
+        return new GameDto(game.getGameId(), game
+                .getOtherPlayer(player), game.getGrid(),
+                game.getTheme(), game.getPlayerScores());
     }
 
 
     public Game getGame(Player player) {
         for (Game game : this.games) {
-            if (game.getFirstPlayer().equals(player) ||
-                    game.getSecondPlayer().equals(player)) {
+            if (game.contains(player)) {
                 return game;
             }
         }
@@ -78,8 +78,7 @@ public class GameService {
     public void endGame(Player currPlayer) {
         Game gameToRemove = null;
         for (Game game : this.games) {
-            if (game.getFirstPlayer().equals(currPlayer) ||
-                    game.getSecondPlayer().equals(currPlayer)) {
+            if (game.contains(currPlayer)) {
                 gameToRemove = game;
                 break;
             }
