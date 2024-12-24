@@ -2,24 +2,20 @@ package io.game.Wordly.entity;
 
 public class Cell {
 
-    private char letter;
+    private final char letter;
 
-    private int status;
+    private String status;
 
-    public void setStatus(int status) {
+    public void setStatus(String status) {
         this.status = status;
-    }
-
-    public void setLetter(char letter) {
-        this.letter = letter;
     }
 
     public Cell(char letter) {
         this.letter = letter;
-        this.status = 1;
+        this.status = "#333";
     }
 
-    public int getStatus() {
+    public String getStatus() {
         return status;
     }
 

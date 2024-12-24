@@ -3,10 +3,10 @@ package io.game.Wordly.service;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import io.game.Wordly.dto.GameDto;
 import io.game.Wordly.entity.Game;
 import io.game.Wordly.entity.Player;
+import io.game.Wordly.entity.Word;
 import org.springframework.stereotype.Service;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -26,7 +26,6 @@ public class GameService {
         Game game = new Game(firstPlayer, secondPlayer);
         this.games.add(game);
         this.broadcastGame(game);
-        System.out.println("Game created between: " + firstPlayer + " and " + secondPlayer);
     }
 
     private void broadcastGame(Game game) {
@@ -59,9 +58,34 @@ public class GameService {
     }
 
     public GameDto getGameDto(Game game, Player player) {
-        return new GameDto(game.getGameId(), game
-                .getOtherPlayer(player), game.getGrid(),
+        return new GameDto(game.getGameId(), player, game
+                .getOtherPlayer(player), game.getPlayerColors(), game.getGrid(),
                 game.getTheme(), game.getPlayerScores());
+    }
+
+    public boolean updateScore(Game game, Word word) {
+        if (!game.getAcceptedWords().contains(word.getText())) {
+            for (String accepted : game.getHiddenWords()) {
+                if (accepted.equals(word.getText())) {
+                    game.updateGrid(word);
+                    game.getAcceptedWords().add(word.getText());
+                    game.getPlayerScores().merge(word.getPlayerId(),
+                            word.getLength(), Integer::sum);
+                    String winner = game.winningCondition();
+                    if (winner.equals("tie")) {
+                        messagingTemplate.convertAndSend("/game/end/" +
+                                game.getGameId(), "tie");
+                    } else if (winner.equals(game.getFirstPlayer()
+                            .getPlayerId()) || winner.equals(game.getSecondPlayer().getPlayerId())) {
+                        messagingTemplate.convertAndSend("/game/end/" +
+                                game.getGameId(), winner);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
 

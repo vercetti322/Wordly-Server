@@ -22,6 +22,15 @@ public class PlayerService {
         this.gameService = gameService;
     }
 
+    public Player getPlayer(String sessionId) {
+        for (Player player : this.playerList) {
+            if (player.getPlayerId().equals(sessionId))
+                return player;
+        }
+
+        return null;
+    }
+
     public synchronized Player addPlayer(String name, String sessionId) {
         Player player = new Player(sessionId, name);
         this.playerList.add(player);
@@ -63,16 +72,15 @@ public class PlayerService {
         if (currPlayer != null) {
             // Find the other player in the game
             Player otherPlayer = this.gameService.getOtherPlayer(currPlayer);
-            System.out.println(otherPlayer);
-
             if (otherPlayer != null) {
                 this.playerList.remove(currPlayer);
                 this.playerList.remove(otherPlayer);
 
-                // End the game by removing it
-                this.messagingTemplate.convertAndSend("/game/" +
-                        this.gameService.getGame(currPlayer).getGameId(), "ended");
+                // message other player to force reload and end its connection
+                this.messagingTemplate.convertAndSend("/player/end/" +
+                        otherPlayer.getPlayerId(), "end");
 
+                // End the game by removing it
                 this.gameService.endGame(currPlayer);
             }
         }

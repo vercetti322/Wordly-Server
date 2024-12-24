@@ -3,8 +3,7 @@ package io.game.Wordly.entity;
 import io.game.Wordly.utils.Generator;
 import io.game.Wordly.utils.PyGrid;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Game {
 
@@ -14,7 +13,11 @@ public class Game {
 
     private final Player secondPlayer;
 
-    private final Map<Player, Integer> playerScores;
+    private final Map<String, Integer> playerScores;
+
+    private final Map<String, String> playerColors;
+
+    private final List<String> acceptedWords;
 
     private final Cell[][] grid;
 
@@ -26,7 +29,7 @@ public class Game {
         return hiddenWords;
     }
 
-    public Map<Player, Integer> getPlayerScores() {
+    public Map<String, Integer> getPlayerScores() {
         return playerScores;
     }
 
@@ -38,6 +41,10 @@ public class Game {
         return secondPlayer;
     }
 
+    public Map<String, String> getPlayerColors() {
+        return playerColors;
+    }
+
     public String getTheme() {
         return theme;
     }
@@ -45,13 +52,17 @@ public class Game {
     public Game(Player firstPlayer, Player secondPlayer) {
         this.firstPlayer = firstPlayer;
         this.secondPlayer = secondPlayer;
+        this.playerColors = new HashMap<>();
+        this.playerColors.put(firstPlayer.getPlayerId(), "pink");
+        this.playerColors.put(secondPlayer.getPlayerId(), "skyblue");
         this.playerScores = new HashMap<>();
-        this.playerScores.put(firstPlayer, 0);
-        this.playerScores.put(secondPlayer, 0);
+        this.playerScores.put(firstPlayer.getPlayerId(), 0);
+        this.playerScores.put(secondPlayer.getPlayerId(), 0);
         this.theme = PyGrid.randomTheme();
         this.hiddenWords = PyGrid.getWords(theme);
         this.grid = PyGrid.getGrid(hiddenWords);
         this.gameId = Generator.gameId();
+        this.acceptedWords = new ArrayList<>();
     }
 
     public Player getPlayer(String playerId) {
@@ -65,7 +76,7 @@ public class Game {
     }
 
     public int getScore(Player player) {
-        return this.playerScores.get(player);
+        return this.playerScores.get(player.getPlayerId());
     }
 
     public boolean contains(Player player) {
@@ -77,7 +88,7 @@ public class Game {
     }
 
     public void setScore(Player player, int score) {
-        this.playerScores.put(player, score);
+        this.playerScores.put(player.getPlayerId(), score);
     }
 
     public Cell[][] getGrid() {
@@ -94,5 +105,37 @@ public class Game {
 
     public Player[] getPlayers() {
         return new Player[]{this.firstPlayer, this.secondPlayer};
+    }
+
+    public void updateGrid(Word word) {
+        for (Box box : word.getSelection()) {
+            int x = box.x(); int y = box.y();
+            this.getGrid()[y][x].setStatus(this.playerColors
+                    .get(word.getPlayerId()));
+        }
+    }
+
+    public List<String> getAcceptedWords() {
+        return acceptedWords;
+    }
+
+    public String winningCondition() {
+        if (this.getAcceptedWords().size() == this.hiddenWords.length) {
+            if (Objects.equals(this.playerScores.get(firstPlayer.getPlayerId()),
+                    this.playerScores.get(secondPlayer.getPlayerId()))) {
+                return "tie";
+            }
+
+            Player winner = null;
+            if (this.playerScores.get(firstPlayer.getPlayerId())
+                    > this.playerScores.get(secondPlayer.getPlayerId()))
+                winner = firstPlayer;
+            else
+                winner = secondPlayer;
+
+            return winner.getPlayerId();
+        }
+
+        return "none";
     }
 }
